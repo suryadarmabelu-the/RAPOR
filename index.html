@@ -1,0 +1,1007 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aplikasi Rapor SMA - Modern & Profesional (Versi Cetak A4)</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary-color: #1e3a8a;
+            --secondary-color: #0284c7;
+            --dark-bg: #0f172a;
+            --sidebar-color: #1e293b;
+            --light-bg: #f8fafc;
+            --accent-color: #10b981;
+        }
+        
+        body { display: flex; height: 100vh; overflow: hidden; background-color: var(--light-bg); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        
+        /* Sidebar Styling */
+        .sidebar { width: 300px; background-color: var(--sidebar-color); color: white; overflow-y: auto; flex-shrink: 0; box-shadow: 4px 0 10px rgba(0,0,0,0.1); transition: transform 0.3s ease; z-index: 1050; }
+        .sidebar h5 { background-color: var(--dark-bg); padding: 20px; margin: 0; text-align: center; font-weight: 700; font-size: 16px; letter-spacing: 1px; border-bottom: 2px solid var(--secondary-color); }
+        .sidebar .nav-link { color: #cbd5e1; border-bottom: 1px solid #334155; padding: 12px 20px; font-size: 14px; cursor: pointer; transition: all 0.3s; display: flex; align-items: center; gap: 10px; }
+        .sidebar .nav-link:hover, .sidebar .nav-link.active { background-color: var(--primary-color); color: white; padding-left: 25px; }
+        .sidebar .nav-print { background-color: #475569; color: #fff; }
+        .sidebar .nav-print:hover { background-color: var(--secondary-color); }
+        
+        /* Content Area */
+        .content-area { flex-grow: 1; overflow-y: auto; padding: 35px; position: relative; }
+        .page-section { display: none; }
+        .page-section.active { display: block; animation: fadeIn 0.4s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .card { border: none; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03); background: white; margin-bottom: 25px; }
+        .card-header { background-color: white; border-bottom: 1px solid #e2e8f0; font-weight: 600; color: var(--dark-bg); }
+        .table-responsive { max-height: 550px; border-radius: 8px; }
+        .table th { background-color: var(--primary-color) !important; color: white !important; font-weight: 600; text-align: center; vertical-align: middle; }
+        
+        /* Mobile Navbar & Overlay */
+        .mobile-header { display: none; padding: 15px; background: var(--primary-color); color: white; align-items: center; justify-content: space-between; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1040; }
+        
+        /* Mobile Responsiveness */
+        @media (max-width: 768px) {
+            body { flex-direction: column; }
+            .sidebar { position: fixed; height: 100%; top: 0; left: 0; transform: translateX(-100%); width: 280px; }
+            .sidebar.active-mobile { transform: translateX(0); }
+            .mobile-header { display: flex; }
+            .content-area { padding: 15px; height: calc(100vh - 60px); }
+            .sidebar-overlay.active { display: block; }
+            h3 { font-size: 1.3rem; }
+        }
+        
+        /* PENGATURAN HALAMAN CETAK DAN STRUKTUR DOKUMEN CETAK */
+        @page { size: A4 portrait; margin: 20mm; }
+        
+        .printable-page { 
+            background: white; padding: 0; width: 210mm; min-height: 297mm; 
+            margin: 0 auto 20px auto; color: #000; box-sizing: border-box; position: relative;
+        }
+        
+        .rapor-page {
+            width: 100%; min-height: 245mm; page-break-after: always;
+            display: flex; flex-direction: column; justify-content: space-between;
+            box-sizing: border-box; background: #fff; padding: 0; margin-bottom: 40px;
+        }
+        
+        @media print {
+            body { display: block; background: white; height: auto; overflow: visible; }
+            .sidebar, .mobile-header, .sidebar-overlay, .no-print, .btn, .alert, .nav { display: none !important; }
+            .content-area { padding: 0 !important; overflow: visible !important; width: 100% !important; }
+            .page-section { display: none !important; }
+            .page-section.active { display: block !important; }
+            .printable-page { border: none !important; box-shadow: none !important; margin: 0 !important; width: 100% !important; min-height: auto !important; }
+            .rapor-page { page-break-after: always !important; min-height: 247mm !important; justify-content: space-between !important; }
+            
+            /* Clean print for Select Dropdown */
+            .select-print-clean {
+                appearance: none !important;
+                -webkit-appearance: none !important;
+                border: none !important;
+                background: transparent !important;
+                padding: 0 !important;
+                font-weight: bold;
+                color: #000;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="mobile-header no-print">
+        <h5 class="m-0 fw-bold"><i class="fa-solid fa-graduation-cap me-2"></i>RAPOR SMA</h5>
+        <button class="btn btn-sm btn-light border-0" onclick="toggleSidebar()"><i class="fa-solid fa-bars text-dark"></i></button>
+    </div>
+
+    <div class="sidebar-overlay no-print" onclick="toggleSidebar()"></div>
+
+    <div class="sidebar d-flex flex-column no-print">
+        <h5 class="d-none d-md-block"><i class="fa-solid fa-graduation-cap me-2"></i>APLIKASI RAPOR SMA</h5>
+        <div class="p-3">
+            <label class="text-white-50 small mb-1 fw-bold">PILIH SEMESTER:</label>
+            <select id="semesterSelect" class="form-select bg-dark text-white border-secondary mb-3" onchange="switchSemester()">
+                <option value="1">Semester 1 (Ganjil)</option>
+                <option value="2">Semester 2 (Genap)</option>
+            </select>
+            <button class="btn btn-emerald btn-success w-100 fw-bold shadow-sm" onclick="saveAllData(); alert('Seluruh data aplikasi berhasil disimpan secara permanen ke sistem!')"><i class="fa-solid fa-floppy-disk me-2"></i>Simpan Global</button>
+        </div>
+        <nav class="nav flex-column pb-4">
+            <a class="nav-link active" onclick="showPage(this, 'page-dashboard')"><i class="fa-solid fa-chart-pie"></i>1. Dashboard Analisis</a>
+            <a class="nav-link" onclick="showPage(this, 'page-identitas-sekolah')"><i class="fa-solid fa-school"></i>2. Identitas Sekolah</a>
+            <a class="nav-link" onclick="showPage(this, 'page-data-siswa')"><i class="fa-solid fa-users"></i>3. Data Siswa & Foto</a>
+            <a class="nav-link" onclick="showPage(this, 'page-ekskul')"><i class="fa-solid fa-basketball"></i>4. Ekstrakurikuler</a>
+            <a class="nav-link" onclick="showPage(this, 'page-kokurikuler')"><i class="fa-solid fa-lightbulb"></i>5. Kokurikuler (P5)</a>
+            <a class="nav-link" onclick="showPage(this, 'page-absensi')"><i class="fa-solid fa-calendar-check"></i>6. Absensi Siswa</a>
+            <a class="nav-link" onclick="showPage(this, 'page-catatan')"><i class="fa-solid fa-comment-medical"></i>7. Catatan Wali Kelas</a>
+            <a class="nav-link" onclick="showPage(this, 'page-mata-pelajaran')"><i class="fa-solid fa-book"></i>11. Mapel, KKM & Materi</a>
+            <a class="nav-link" onclick="showPage(this, 'page-leger-umum')"><i class="fa-solid fa-table"></i>12. Leger Komponen Umum</a>
+            <a class="nav-link" onclick="showPage(this, 'page-leger-cp')"><i class="fa-solid fa-file-pen"></i>12b. Leger Deskripsi CP</a>
+            <a class="nav-link" onclick="showPage(this, 'page-leger-murni')"><i class="fa-solid fa-square-poll-vertical"></i>13. Leger Ujian Murni</a>
+            <a class="nav-link" onclick="showPage(this, 'page-leger-kolektif')"><i class="fa-solid fa-calculator"></i>14. Leger Kolektif</a>
+            <a class="nav-link" onclick="showPage(this, 'page-leger-remidial')"><i class="fa-solid fa-file-shield"></i>15. Leger Remidial</a>
+            
+            <a class="nav-link nav-print mt-2" onclick="showPage(this, 'page-cover-rapor')"><i class="fa-solid fa-folder-open"></i>9. Cetak Cover Rapor</a>
+            <a class="nav-link nav-print" onclick="showPage(this, 'page-cetak-identitas-sekolah')"><i class="fa-solid fa-print"></i>10. Cetak Identitas Sekolah</a>
+            <a class="nav-link nav-print" onclick="prepareCetakSiswa(); showPage(this, 'page-cetak-identitas-pd')"><i class="fa-solid fa-id-card"></i>8. Cetak Identitas PD</a>
+            <a class="nav-link bg-primary text-white font-weight-bold" onclick="prepareRaporFinal(); showPage(this, 'page-rapor-final')"><i class="fa-solid fa-file-pdf"></i>16-18. Cetak Rapor Final (A4)</a>
+        </nav>
+    </div>
+
+    <div class="content-area">
+        
+        <div id="page-dashboard" class="page-section active">
+            <div class="alert alert-info d-flex align-items-center no-print shadow-sm"><i class="fa-solid fa-circle-info me-3 h4 mb-0 d-none d-md-block"></i>Selamat datang di Aplikasi Rapor Kurikulum Merdeka. Terintegrasi, responsif Android, dan siap cetak.</div>
+            <h3 class="mb-4 text-dark fw-bold"><i class="fa-solid fa-chart-line me-2 text-primary"></i>1. Dashboard Analisis Keadaan Kelas</h3>
+            <div class="row">
+                <div class="col-md-6 mb-4"><div class="card p-3"><h5><i class="fa-solid fa-venus-mars me-2 text-primary"></i>Grafik Distribusi Gender Siswa</h5><div style="height: 250px;" id="canvasParent1"><canvas id="chartGender"></canvas></div></div></div>
+                <div class="col-md-6 mb-4"><div class="card p-3"><h5><i class="fa-solid fa-chart-simple me-2 text-success"></i>Analisis Nilai Rata-rata Mapel</h5><div style="height: 250px;" id="canvasParent2"><canvas id="chartMapel"></canvas></div></div></div>
+            </div>
+        </div>
+
+        <div id="page-identitas-sekolah" class="page-section">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+                <h3 class="fw-bold text-dark m-0"><i class="fa-solid fa-school me-2 text-primary"></i>2. Konfigurasi Identitas Sekolah</h3>
+                <button class="btn btn-success fw-bold shadow-sm" onclick="saveAllData(); alert('Data Identitas Sekolah berhasil disimpan!')"><i class="fa-solid fa-save me-2"></i>Simpan Data</button>
+            </div>
+            <div class="card p-3 p-md-4">
+                <form id="formIdentitas">
+                    <div class="row g-3">
+                        <div class="col-md-12 mb-2"><label class="form-label fw-bold text-danger"><i class="fa-solid fa-image me-1"></i>Upload Logo Sekolah (.png / .jpg)</label><input type="file" class="form-control" accept="image/*" onchange="processSchoolLogo(this)"></div>
+                        <div class="col-md-4"><label class="form-label fw-bold">Nama Sekolah</label><input type="text" class="form-control" id="sch_nama" value="SMA Negeri Contoh" onchange="saveAllData()"></div>
+                        <div class="col-md-4"><label class="form-label fw-bold">NPSN</label><input type="text" class="form-control" id="sch_npsn" value="10203040" onchange="saveAllData()"></div>
+                        <div class="col-md-4"><label class="form-label fw-bold">NSS</label><input type="text" class="form-control" id="sch_nss" value="30102030" onchange="saveAllData()"></div>
+                        <div class="col-md-8"><label class="form-label fw-bold">Alamat Sekolah</label><input type="text" class="form-control" id="sch_alamat" value="Jl. Pendidikan No. 45" onchange="saveAllData()"></div>
+                        <div class="col-md-4"><label class="form-label fw-bold">Desa/Kelurahan</label><input type="text" class="form-control" id="sch_desa" value="Merdeka" onchange="saveAllData()"></div>
+                        <div class="col-md-4"><label class="form-label fw-bold">Kecamatan</label><input type="text" class="form-control" id="sch_kec" value="Cerdas" onchange="saveAllData()"></div>
+                        <div class="col-md-4"><label class="form-label fw-bold">Kabupaten/Kota</label><input type="text" class="form-control" id="sch_kab" value="Kota Pintar" onchange="saveAllData()"></div>
+                        <div class="col-md-4"><label class="form-label fw-bold">Provinsi</label><input type="text" class="form-control" id="sch_prov" value="Nusantara" onchange="saveAllData()"></div>
+                        <div class="col-md-6"><label class="form-label fw-bold">Website</label><input type="text" class="form-control" id="sch_web" value="www.smancontoh.sch.id" onchange="saveAllData()"></div>
+                        <div class="col-md-6"><label class="form-label fw-bold">Email</label><input type="text" class="form-control" id="sch_email" value="info@smancontoh.sch.id" onchange="saveAllData()"></div>
+                        <div class="col-md-3"><label class="form-label fw-bold">Nama Kelas</label><input type="text" class="form-control" id="sch_kelas" value="XI-A" onchange="saveAllData()"></div>
+                        <div class="col-md-3"><label class="form-label fw-bold">Fase</label><input type="text" class="form-control" id="sch_fase" value="F" onchange="saveAllData()"></div>
+                        <div class="col-md-3"><label class="form-label fw-bold">Tahun Pelajaran</label><input type="text" class="form-control" id="sch_tp" value="2026/2027" onchange="saveAllData()"></div>
+                        <div class="col-md-3"><label class="form-label fw-bold">Tempat & Tanggal Rapor</label><input type="text" class="form-control" id="sch_tgl_rapor" value="Kota Pintar, 19 Juni 2026" onchange="saveAllData()"></div>
+                        <div class="col-md-6"><label class="form-label fw-bold">Nama Wali Kelas</label><input type="text" class="form-control" id="sch_wali" value="Budi Utomo, S.Pd." onchange="saveAllData()"></div>
+                        <div class="col-md-6"><label class="form-label fw-bold">NIP Wali Kelas</label><input type="text" class="form-control" id="sch_wali_nip" value="198501012010011002" onchange="saveAllData()"></div>
+                        <div class="col-md-6"><label class="form-label fw-bold">Nama Kepala Sekolah</label><input type="text" class="form-control" id="sch_kepsek" value="Dr. H. Ahmad Sanusi, M.Pd." onchange="saveAllData()"></div>
+                        <div class="col-md-6"><label class="form-label fw-bold">NIP Kepala Sekolah</label><input type="text" class="form-control" id="sch_kepsek_nip" value="197305121999031001" onchange="saveAllData()"></div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div id="page-data-siswa" class="page-section">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+                <h3 class="fw-bold text-dark m-0"><i class="fa-solid fa-users me-2 text-primary"></i>3. Input Data Lengkap Siswa</h3>
+                <button class="btn btn-success fw-bold shadow-sm" onclick="saveAllData(); alert('Data Siswa berhasil disimpan!')"><i class="fa-solid fa-save me-2"></i>Simpan Data</button>
+            </div>
+            <div class="card p-3">
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover table-sm align-middle" style="min-width: 3600px; font-size: 13px;">
+                        <thead>
+                            <tr>
+                                <th width="40">No</th><th width="150">Upload Foto (3x4)</th><th width="100">NIS</th><th width="120">NISN</th><th width="200">Nama Lengkap</th>
+                                <th width="120">Tempat Lahir</th><th width="130">Tanggal Lahir</th><th width="110">Jenis Kelamin</th><th width="130">Agama</th><th width="140">Status Keluarga</th>
+                                <th width="80">Anak Ke</th><th width="220">Alamat Siswa</th><th width="120">No HP Siswa</th><th width="150">Asal SMP</th><th width="100">Diterima di Kelas</th>
+                                <th width="130">Tgl Diterima</th><th width="150">Nama Bapak</th><th width="150">Nama Mama</th><th width="200">Alamat Ortu</th><th width="130">No HP Ortu</th>
+                                <th width="150">Pekerjaan Bapak</th><th width="150">Pekerjaan Mama</th><th width="150">Nama Wali</th><th width="130">No HP Wali</th>
+                            </tr>
+                        </thead>
+                        <tbody id="siswaTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div id="page-ekskul" class="page-section">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+                <h3 class="fw-bold text-dark m-0"><i class="fa-solid fa-basketball me-2 text-primary"></i>4. Ekstrakurikuler</h3>
+                <button class="btn btn-success fw-bold shadow-sm" onclick="saveAllData(); alert('Data Ekstrakurikuler berhasil disimpan!')"><i class="fa-solid fa-save me-2"></i>Simpan Ekskul</button>
+            </div>
+            <div class="card p-3"><div class="table-responsive"><table class="table table-bordered table-striped table-sm align-middle" style="min-width: 600px;"><thead><tr><th width="50">No</th><th width="250">Nama Siswa</th><th>Nama Ekstrakurikuler</th><th>Deskripsi Kegiatan Ekstrakurikuler</th></tr></thead><tbody id="ekskulTableBody"></tbody></table></div></div>
+        </div>
+
+        <div id="page-kokurikuler" class="page-section">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+                <h3 class="fw-bold text-dark m-0"><i class="fa-solid fa-lightbulb me-2 text-primary"></i>5. Kokurikuler (P5)</h3>
+                <button class="btn btn-success fw-bold shadow-sm" onclick="saveAllData(); alert('Data Kokurikuler P5 berhasil disimpan!')"><i class="fa-solid fa-save me-2"></i>Simpan P5</button>
+            </div>
+            <div class="card p-3"><div class="table-responsive"><table class="table table-bordered table-striped table-sm align-middle" style="min-width: 600px;"><thead><tr><th width="50">No</th><th width="250">Nama Siswa</th><th>Deskripsi Proyek / Kokurikuler (P5)</th></tr></thead><tbody id="kokurikulerTableBody"></tbody></table></div></div>
+        </div>
+
+        <div id="page-absensi" class="page-section">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+                <h3 class="fw-bold text-dark m-0"><i class="fa-solid fa-calendar-check me-2 text-primary"></i>6. Rekap Absensi</h3>
+                <button class="btn btn-success fw-bold shadow-sm" onclick="saveAllData(); alert('Data Absensi berhasil disimpan!')"><i class="fa-solid fa-save me-2"></i>Simpan Absensi</button>
+            </div>
+            <div class="card p-3"><div class="table-responsive"><table class="table table-bordered table-sm text-center align-middle" style="min-width: 600px;"><thead><tr><th width="50">No</th><th width="250" class="text-start">Nama Siswa</th><th width="120">Sakit (Hari)</th><th width="120">Izin (Hari)</th><th width="120">Alpa (Hari)</th></tr></thead><tbody id="absensiTableBody"></tbody></table></div></div>
+        </div>
+
+        <div id="page-catatan" class="page-section">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+                <h3 class="fw-bold text-dark m-0"><i class="fa-solid fa-comment-medical me-2 text-primary"></i>7. Catatan Wali Kelas</h3>
+                <button class="btn btn-success fw-bold shadow-sm" onclick="saveAllData(); alert('Catatan Wali Kelas berhasil disimpan!')"><i class="fa-solid fa-save me-2"></i>Simpan Catatan</button>
+            </div>
+            <div class="card p-3"><div class="table-responsive"><table class="table table-bordered table-sm align-middle" style="min-width: 600px;"><thead><tr><th width="50">No</th><th width="250">Nama Siswa</th><th>Catatan Perkembangan Peserta Didik</th></tr></thead><tbody id="catatanTableBody"></tbody></table></div></div>
+        </div>
+
+        <div id="page-mata-pelajaran" class="page-section">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+                <h3 class="fw-bold text-dark m-0"><i class="fa-solid fa-book me-2 text-primary"></i>11. Mapel, KKM & Materi</h3>
+                <button class="btn btn-success fw-bold shadow-sm" onclick="saveAllData(); alert('Konfigurasi Mapel, KKM, dan Materi berhasil disimpan!')"><i class="fa-solid fa-save me-2"></i>Simpan Konfigurasi</button>
+            </div>
+            <div class="card p-3 p-md-4">
+                <div class="table-responsive">
+                    <table class="table table-bordered align-middle" style="min-width: 700px;">
+                        <thead><tr><th>Nama Mata Pelajaran</th><th width="120">KKM</th><th width="450">Materi Pokok (Untuk Rumusan CP)</th></tr></thead>
+                        <tbody id="mapelTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div id="page-leger-umum" class="page-section">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+                <h3 class="fw-bold text-dark m-0"><i class="fa-solid fa-table me-2 text-primary"></i>12. Leger Nilai Komponen Umum</h3>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-dark fw-bold no-print" onclick="cetakLandscape()"><i class="fa-solid fa-print me-2"></i>Cetak Leger (A4 Landscape)</button>
+                    <button class="btn btn-success fw-bold shadow-sm no-print" onclick="saveAllData(); alert('Seluruh Komponen Leger Umum berhasil disimpan!')"><i class="fa-solid fa-save me-2"></i>Simpan Nilai</button>
+                </div>
+            </div>
+            <div class="mb-3 card p-3 d-flex flex-row align-items-center gap-3 no-print"><label class="fw-bold text-secondary mb-0">PILIH MATA PELAJARAN:</label><select id="legerMapelSelect" class="form-select w-auto d-inline-block" onchange="renderLegerUmum()"></select></div>
+            <div class="card p-3">
+                <div class="table-responsive table-print-wrapper">
+                    <table class="table table-bordered table-sm text-center align-middle" style="min-width: 1200px; font-size: 13px;">
+                        <thead>
+                            <tr><th rowspan="2" width="40">No</th><th rowspan="2" width="200" class="text-start">Nama Siswa</th><th rowspan="2" width="90">Ujian Sem</th><th colspan="8">Komponen Penilaian (Hanya Isian > 0 yang Dihitung Rerata)</th><th rowspan="2" width="100" class="bg-primary-subtle text-dark">Rata-rata</th><th rowspan="2" width="90" class="bg-success-subtle text-dark">Remidial</th></tr>
+                            <tr><th>Ul. 1</th><th>Blok 1</th><th>Ul. 2</th><th>Blok 2</th><th>UH</th><th>Pre</th><th>Post</th><th>Tugas</th></tr>
+                        </thead>
+                        <tbody id="legerUmumBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div id="page-leger-cp" class="page-section">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+                <h3 class="fw-bold text-dark m-0"><i class="fa-solid fa-file-pen me-2 text-primary"></i>12b. Leger Deskripsi CP (Otomatis)</h3>
+                <button class="btn btn-dark fw-bold no-print" onclick="cetakLandscape()"><i class="fa-solid fa-print me-2"></i>Cetak Leger CP (Landscape)</button>
+            </div>
+            <div class="mb-3 card p-3 d-flex flex-row align-items-center gap-3 no-print"><label class="fw-bold text-secondary mb-0">PILIH MATA PELAJARAN:</label><select id="cpMapelSelect" class="form-select w-auto d-inline-block" onchange="renderLegerCP()"></select></div>
+            <div class="card p-3">
+                <div class="table-responsive">
+                    <table class="table table-bordered table-striped table-sm align-middle" style="font-size:13px; min-width: 700px;">
+                        <thead><tr><th width="50">No</th><th width="250">Nama Siswa</th><th width="100">Nilai Akhir</th><th>Hasil Deskripsi Otomatis (Berdasarkan KKM & Materi)</th></tr></thead>
+                        <tbody id="legerCPBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div id="page-leger-murni" class="page-section">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+                <h3 class="text-dark fw-bold m-0"><i class="fa-solid fa-square-poll-vertical me-2 text-primary"></i>13. Leger Ujian Murni</h3>
+                <button class="btn btn-dark fw-bold no-print" onclick="cetakLandscape()"><i class="fa-solid fa-print me-2"></i>Cetak Leger (Landscape)</button>
+            </div>
+            <div class="card p-3"><div class="table-responsive"><table class="table table-bordered table-sm text-center align-middle" id="tableLegerMurni" style="min-width: 1000px;"></table></div></div>
+        </div>
+        
+        <div id="page-leger-kolektif" class="page-section">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+                <h3 class="text-dark fw-bold m-0"><i class="fa-solid fa-calculator me-2 text-success"></i>14. Leger Rata-rata Kolektif</h3>
+                <button class="btn btn-dark fw-bold no-print" onclick="cetakLandscape()"><i class="fa-solid fa-print me-2"></i>Cetak Leger (Landscape)</button>
+            </div>
+            <div class="card p-3"><div class="table-responsive"><table class="table table-bordered table-sm text-center align-middle" id="tableLegerKolektif" style="min-width: 1000px;"></table></div></div>
+        </div>
+        
+        <div id="page-leger-remidial" class="page-section">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+                <h3 class="text-dark fw-bold m-0"><i class="fa-solid fa-file-shield me-2 text-danger"></i>15. Leger Remidial Akhir</h3>
+                <button class="btn btn-dark fw-bold no-print" onclick="cetakLandscape()"><i class="fa-solid fa-print me-2"></i>Cetak Leger (Landscape)</button>
+            </div>
+            <div class="card p-3"><div class="table-responsive"><table class="table table-bordered table-sm text-center align-middle" id="tableLegerRemidial" style="min-width: 1000px;"></table></div></div>
+        </div>
+
+        <div id="page-cover-rapor" class="page-section">
+            <div class="no-print mb-4 border p-3 rounded bg-white"><button class="btn btn-dark fw-bold w-100 w-md-auto" onclick="window.print()"><i class="fa-solid fa-print me-2"></i>Cetak Cover Rapor (A4)</button></div>
+            <div class="printable-page border border-dark p-4 shadow-sm" style="height: 297mm; display: flex; flex-direction: column; justify-content: space-between; align-items: center; padding-top: 20mm !important; padding-bottom: 20mm !important; box-shadow: none;">
+                <div class="text-center w-100">
+                    <h1 class="fw-bold" style="font-size: 38px; margin-top: 10px; letter-spacing: 2px;">RAPOR</h1>
+                    <h4 class="fw-bold" style="font-size: 20px; margin-bottom: 5px;">SEKOLAH MENENGAH ATAS (SMA)</h4>
+                    <h5 class="fw-bold text-primary text-uppercase border-top border-bottom border-dark py-2 mx-auto" style="width: 80%; font-size: 18px;" id="cov_school_name">SMA Negeri Contoh</h5>
+                </div>
+                <div class="my-3" id="coverLogoContainer" style="display:flex; justify-content:center; align-items:center;"></div>
+                <div class="w-100" style="font-size: 16px; display:flex; justify-content:center;">
+                    <table class="table table-borderless style-table" style="width: 75%; margin: 0 auto; line-height: 2;">
+                        <tr><td width="40%">Nama Peserta Didik</td><td width="5%">:</td><td class="fw-bold border-bottom border-dark text-uppercase" id="cov_nama"></td></tr>
+                        <tr><td>NISN</td><td>:</td><td class="fw-bold border-bottom border-dark" id="cov_nisn"></td></tr>
+                        <tr><td>NIS</td><td>:</td><td class="fw-bold border-bottom border-dark" id="cov_nis"></td></tr>
+                    </table>
+                </div>
+                <div class="text-center mb-2">
+                    <h5 class="fw-bold" style="font-size:16px; margin-bottom:2px;">KEMENTERIAN PENDIDIKAN DAN KEBUDAYAAN</h5>
+                    <h6 class="fw-bold" style="font-size:14px;">REPUBLIK INDONESIA</h6>
+                </div>
+            </div>
+        </div>
+
+        <div id="page-cetak-identitas-sekolah" class="page-section">
+            <div class="no-print mb-4 border p-3 rounded bg-white"><button class="btn btn-dark fw-bold w-100 w-md-auto" onclick="window.print()"><i class="fa-solid fa-print me-2"></i>Cetak Identitas Sekolah</button></div>
+            <div class="printable-page border p-5 shadow-sm" style="height: 297mm;">
+                <div class="text-center mb-4 border-bottom border-3 border-dark pb-3">
+                    <h3 class="fw-bold mb-0" style="font-size:22px;">RAPOR SEKOLAH MENENGAH ATAS (SMA)</h3>
+                </div>
+                <table class="table table-bordered border-dark align-middle" style="margin-top: 15px; font-size: 15px;">
+                    <tr><td width="35%" class="p-3 fw-bold bg-light">Nama Sekolah</td><td class="p-3 fw-bold text-uppercase" id="cis_nama"></td></tr>
+                    <tr><td class="p-3 bg-light">NPSN</td><td class="p-3" id="cis_npsn"></td></tr>
+                    <tr><td class="p-3 bg-light">NSS</td><td class="p-3" id="cis_nss"></td></tr>
+                    <tr><td class="p-3 bg-light">Alamat Sekolah</td><td class="p-3" id="cis_alamat"></td></tr>
+                    <tr><td class="p-3 bg-light">Desa/Kelurahan</td><td class="p-3" id="cis_desa"></td></tr>
+                    <tr><td class="p-3 bg-light">Kecamatan</td><td class="p-3" id="cis_kec"></td></tr>
+                    <tr><td class="p-3 bg-light">Kabupaten/Kota</td><td class="p-3" id="cis_kab"></td></tr>
+                    <tr><td class="p-3 bg-light">Provinsi</td><td class="p-3" id="cis_prov"></td></tr>
+                </table>
+            </div>
+        </div>
+
+        <div id="page-cetak-identitas-pd" class="page-section">
+            <div class="no-print mb-4 d-flex flex-column flex-md-row gap-3 align-items-md-center bg-white p-3 border rounded">
+                <label class="fw-bold mb-0">PILIH SISWA:</label>
+                <select id="selectCetakSiswa" class="form-select w-100 w-md-auto" onchange="renderCetakIdentitasSiswa()"></select>
+                <button class="btn btn-dark fw-bold" onclick="window.print()"><i class="fa-solid fa-print me-2"></i>Cetak Identitas PD</button>
+            </div>
+            <div class="printable-page border p-4 shadow-sm" style="height: 297mm; font-size: 13px; display: flex; flex-direction: column; justify-content: space-between;">
+                <div>
+                    <div class="d-flex align-items-center justify-content-between mb-3 border-bottom border-2 border-dark pb-2">
+                        <div id="pdHeaderLogoContainer" style="width: 70px; height: 70px; display: flex; align-items: center;"></div>
+                        <h5 class="fw-bold text-center flex-grow-1 m-0" style="text-decoration: underline; padding-right: 70px; font-size:18px;">IDENTITAS PESERTA DIDIK</h5>
+                    </div>
+                    <table class="table table-borderless align-middle m-0 p-0" id="tableCetakPD" style="line-height: 1.7;"></table>
+                </div>
+                <div class="d-flex justify-content-end align-items-end px-3 mt-auto mb-2" style="gap: 50px;">
+                    <div id="pdPhotoContainer" style="margin-bottom: 5px;"></div>
+                    <div style="width: 250px; text-align: center;">
+                        <p id="pd_cetak_tempat_tgl" class="m-0">Atambua, ........................</p>
+                        <p class="mb-4">Kepala Sekolah,</p>
+                        <br><br>
+                        <p class="fw-bold mb-0 text-decoration-underline text-uppercase" id="pd_cetak_kepsek"></p>
+                        <p id="pd_cetak_kepsek_nip" class="m-0"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="page-rapor-final" class="page-section">
+            <div class="no-print mb-4 bg-light p-3 border rounded shadow-sm">
+                <div class="row g-2 align-items-end">
+                    <div class="col-12 col-md-auto"><label class="fw-bold small">Mode Multi-Cetak:</label><select id="selectRaporScope" class="form-select form-select-sm" onchange="renderRaporFinal()"><option value="single">Siswa Terpilih Saja</option><option value="all">SEMUA SISWA (Masal)</option></select></div>
+                    <div class="col-12 col-md-auto" id="wrapperSelectRaporSiswa"><label class="fw-bold small">Pilih Siswa:</label><select id="selectRaporSiswa" class="form-select form-select-sm" onchange="renderRaporFinal()"></select></div>
+                    <div class="col-12 col-md-auto"><label class="fw-bold small">Gunakan Data Nilai:</label><select id="selectRaporTipe" class="form-select form-select-sm" onchange="renderRaporFinal()"><option value="murni">16. Nilai Ujian Murni</option><option value="kolektif">17. Nilai Rata-Rata Umum</option><option value="remidial" selected>18. Nilai Remidial Akhir</option></select></div>
+                    <div class="col-12 col-md-auto"><button class="btn btn-primary btn-sm fw-bold w-100" onclick="window.print()"><i class="fa-solid fa-print me-1"></i>Cetak Rapor A4</button></div>
+                </div>
+            </div>
+            <div class="printable-page" id="raporPrintContainer" style="border:none; box-shadow:none; padding:0; background:transparent;"></div>
+        </div>
+    </div>
+
+    <script>
+        let db = {
+            semester: "1",
+            identitas: { logo: "" },
+            siswa: [],
+            mapel: [
+                { id: "mapel1", nama: "Pendidikan Agama", kkm: 75, materi: "Nilai Keimanan dan Akhlak Mulia" },
+                { id: "mapel2", nama: "Pendidikan Pancasila", kkm: 75, materi: "Implementasi Nilai-Nilai Dasar Pancasila dan Konstitusi" },
+                { id: "mapel3", nama: "Bahasa Indonesia", kkm: 75, materi: "Teks Laporan Hasil Observasi dan Pidato Persuasif" },
+                { id: "mapel4", nama: "Bahasa Inggris", kkm: 75, materi: "Analytical Exposition Text and Formal Correspondence" },
+                { id: "mapel5", nama: "Matematika (Umum)", kkm: 75, materi: "Fungsi Invers, Matriks, dan Transformasi Geometri" },
+                { id: "mapel6", nama: "Pendidikan Jasmani, Olahraga, dan Kesehatan", kkm: 75, materi: "Kebugaran Jasmani dan Strategi Permainan Bola Besar" },
+                { id: "mapel7", nama: "Sejarah", kkm: 75, materi: "Dinamika Pergerakan Nasional Perjuangan Indonesia" },
+                { id: "mapel8", nama: "Seni Budaya", kkm: 75, materi: "Apresiasi Karya Seni Rupa Dua Dimensi dan Musik Nusantara" },
+                { id: "mapel9", nama: "Biologi", kkm: 75, materi: "Struktur Sel, Jaringan Tumbuhan, dan Metabolisme", options: ["Sosiologi", "Biologi", "Antropologi"] },
+                { id: "mapel10", nama: "Fisika", kkm: 75, materi: "Dinamika Rotasi, Fluida Statis, dan Termodinamika", options: ["Ekonomi", "Fisika", "Bahasa Jerman"] },
+                { id: "mapel11", nama: "Kimia", kkm: 75, materi: "Ikatan Kimia, Stoikiometri, dan Laju Reaksi", options: ["Geografi", "Kimia", "Sastra Indonesia"] },
+                { id: "mapel12", nama: "Matematika Tingkat Lanjut", kkm: 75, materi: "Polinomial, Trigonometri Analitika, dan Vektor", options: ["Sejarah Tingkat Lanjut", "Matematika Tingkat Lanjut", "Sastra Inggris", "Bahasa Inggris Tingkat Lanjut"] },
+                { id: "mapel13", nama: "Informatika", kkm: 75, materi: "Algoritma Pemrograman Berorientasi Objek dan Analisis Data" }
+            ],
+            nilai: {}
+        };
+
+        let studentPhotos = {};
+
+        // Mobile Sidebar Toggle
+        function toggleSidebar() {
+            document.querySelector('.sidebar').classList.toggle('active-mobile');
+            document.querySelector('.sidebar-overlay').classList.toggle('active');
+        }
+        
+        // Auto-close sidebar on mobile when nav item clicked
+        document.querySelectorAll('.sidebar .nav-link').forEach(link => {
+            link.addEventListener('click', () => {
+                if (window.innerWidth <= 768) toggleSidebar();
+            });
+        });
+
+        // Landscape Print Utility untuk Leger
+        function cetakLandscape() {
+            const style = document.createElement('style');
+            style.innerHTML = `@media print { 
+                @page { size: A4 landscape; margin: 10mm; } 
+                body { zoom: 0.65; } 
+                .table-responsive { max-height: none !important; overflow: visible !important; }
+            }`;
+            document.head.appendChild(style);
+            window.print();
+            setTimeout(() => style.remove(), 1000);
+        }
+
+        function formatTanggalIndo(dateString) {
+            if (!dateString) return '';
+            const bulanIndo = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+            const date = new Date(dateString);
+            if (isNaN(date.getTime())) return dateString;
+            const hari = date.getDate();
+            const bulan = bulanIndo[date.getMonth()];
+            const tahun = date.getFullYear();
+            return `${hari} ${bulan} ${tahun}`;
+        }
+
+        window.onload = function() {
+            if(localStorage.getItem("rapor_webapp_db_v3")) {
+                db = JSON.parse(localStorage.getItem("rapor_webapp_db_v3"));
+                const optMap = { mapel9: ["Sosiologi", "Biologi", "Antropologi"], mapel10: ["Ekonomi", "Fisika", "Bahasa Jerman"], mapel11: ["Geografi", "Kimia", "Sastra Indonesia"], mapel12: ["Sejarah Tingkat Lanjut", "Matematika Tingkat Lanjut", "Sastra Inggris", "Bahasa Inggris Tingkat Lanjut"] };
+                db.mapel.forEach(m => {
+                    if (optMap[m.id]) { m.options = optMap[m.id]; if (!m.options.includes(m.nama)) m.nama = m.options[0]; }
+                    if(!m.materi) m.materi = "Materi Pokok Esensial Kelas XI";
+                });
+                if(db.identitas) {
+                    Object.keys(db.identitas).forEach(key => { let el = document.getElementById('sch_' + key); if(el) el.value = db.identitas[key]; });
+                }
+                document.getElementById('semesterSelect').value = db.semester;
+            } else {
+                for(let i=0; i<40; i++) {
+                    db.siswa.push({
+                        nis: '100' + (i+1), nisn: '00123450' + (i+1), nama: 'Siswa Contoh ' + (i+1),
+                        tempat: 'Kupang', tanggal: '2010-01-' + (i+1 < 10 ? '0'+(i+1) : i+1),
+                        jk: i % 2 == 0 ? 'Laki-laki' : 'Perempuan', agama: 'Kristen Protestan',
+                        status: 'Anak Kandung', anak_ke: '1', alamat: 'Jl. Jend Sudirman No. ' + (i+1),
+                        hp: '0812345678'+i, smp: 'SMP Negeri 1', kelas_diterima: 'XI-A', tgl_diterima: '2025-07-15',
+                        bapak: 'Bapak Siswa ' + (i+1), mama: 'Mama Siswa ' + (i+1), alamat_ortu: 'Jl. Jend Sudirman No. ' + (i+1), hp_ortu: '0812999988' + i,
+                        kerja_bapak: 'PNS', kerja_mama: 'IRT', nama_wali: '-', hp_wali: '-',
+                        sem1_ekskul: 'Pramuka', sem1_ekskul_desc: 'Sangat Aktif dan Baik dalam kedisiplinan organisasi.',
+                        sem2_ekskul: 'Pramuka', sem2_ekskul_desc: 'Sangat Aktif dan Memuaskan dalam kepemimpinan regu.',
+                        sem1_koku: 'Proyek P5 Tema Kewirausahaan: Berhasil merancang strategi product pangan lokal secara mandiri.',
+                        sem2_koku: 'Proyek P5 Tema Gaya Hidup Berkelanjutan: Sangat baik memetakan pengelolaan sampah sekolah.',
+                        sem1_sakit: 0, sem1_izin: 0, sem1_alpa: 0, sem2_sakit: 0, sem2_izin: 0, sem2_alpa: 0,
+                        sem1_catatan: 'Pertahankan prestasi belajar Anda, terus semangat!', sem2_catatan: 'Selamat, tingkatkan konsistensi belajarmu di jenjang kelas berikutnya.'
+                    });
+                }
+                saveAllData();
+            }
+            renderAllInputs();
+            initCharts();
+        };
+
+        function saveAllData() {
+            db.identitas = {
+                logo: db.identitas.logo || "",
+                nama: document.getElementById('sch_nama').value, npsn: document.getElementById('sch_npsn').value,
+                nss: document.getElementById('sch_nss').value, alamat: document.getElementById('sch_alamat').value,
+                desa: document.getElementById('sch_desa').value, kec: document.getElementById('sch_kec').value,
+                kab: document.getElementById('sch_kab').value, prov: document.getElementById('sch_prov').value,
+                web: document.getElementById('sch_web').value, email: document.getElementById('sch_email').value,
+                kelas: document.getElementById('sch_kelas').value, fase: document.getElementById('sch_fase').value,
+                tp: document.getElementById('sch_tp').value, tgl_rapor: document.getElementById('sch_tgl_rapor').value,
+                wali: document.getElementById('sch_wali').value, wali_nip: document.getElementById('sch_wali_nip').value,
+                kepsek: document.getElementById('sch_kepsek').value, kepsek_nip: document.getElementById('sch_kepsek_nip').value
+            };
+            localStorage.setItem("rapor_webapp_db_v3", JSON.stringify(db));
+            updateCetakStatic();
+        }
+
+        function processSchoolLogo(input) {
+            if (input.files && input.files[0]) {
+                let reader = new FileReader();
+                reader.onload = function(e) { db.identitas.logo = e.target.result; saveAllData(); };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function processStudentPhoto(input, index) {
+            if (input.files && input.files[0]) {
+                let reader = new FileReader();
+                reader.onload = function(e) { studentPhotos[index] = e.target.result; renderCetakIdentitasSiswa(); };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function switchSemester() {
+            db.semester = document.getElementById('semesterSelect').value;
+            renderAllInputs();
+        }
+
+        function showPage(element, id) {
+            document.querySelectorAll('.page-section').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.sidebar .nav-link').forEach(l => l.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            if (element) element.classList.add('active');
+            
+            if(id === 'page-leger-murni') renderLegerRekap('murni');
+            if(id === 'page-leger-kolektif') renderLegerRekap('kolektif');
+            if(id === 'page-leger-remidial') renderLegerRekap('remidial');
+            if(id === 'page-leger-cp') renderLegerCP();
+            if(id === 'page-dashboard') initCharts();
+        }
+
+        function hitungCPDeskripsi(score, kkm, materi) {
+            let predikat = "Memiliki kompetensi cukup"; let k = parseInt(kkm);
+            if (k === 68) { if (score <= 67) predikat = "Memiliki kompetensi kurang"; else if (score <= 78) predikat = "Memiliki kompetensi cukup"; else if (score <= 89) predikat = "Memiliki kompetensi baik"; else predikat = "Memiliki kompetensi yang sangat baik"; } 
+            else if (k === 65) { if (score <= 64) predikat = "Memiliki kompetensi kurang"; else if (score <= 76) predikat = "Memiliki kompetensi cukup"; else if (score <= 88) predikat = "Memiliki kompetensi baik"; else predikat = "Memiliki kompetensi yang sangat baik"; } 
+            else if (k === 60) { if (score <= 59) predikat = "Memiliki kompetensi kurang"; else if (score <= 72) predikat = "Memiliki kompetensi cukup"; else if (score <= 85) predikat = "Memiliki kompetensi baik"; else predikat = "Memiliki kompetensi yang sangat baik"; } 
+            else if (k === 70) { if (score <= 69) predikat = "Memiliki kompetensi kurang"; else if (score <= 79) predikat = "Memiliki kompetensi cukup"; else if (score <= 89) predikat = "Memiliki kompetensi baik"; else predikat = "Memiliki kompetensi yang sangat baik"; } 
+            else if (k === 75) { if (score <= 74) predikat = "Memiliki kompetensi kurang"; else if (score <= 82) predikat = "Memiliki kompetensi cukup"; else if (score <= 90) predikat = "Memiliki kompetensi baik"; else predikat = "Memiliki kompetensi yang sangat baik"; } 
+            else if (k === 78) { if (score <= 77) predikat = "Memiliki kompetensi kurang"; else if (score <= 84) predikat = "Memiliki kompetensi cukup"; else if (score <= 91) predikat = "Memiliki kompetensi baik"; else predikat = "Memiliki kompetensi yang sangat baik"; } 
+            else { if (score < k) predikat = "Memiliki kompetensi kurang"; else if (score <= k + 10) predikat = "Memiliki kompetensi cukup"; else if (score <= k + 20) predikat = "Memiliki kompetensi baik"; else predikat = "Memiliki kompetensi yang sangat baik"; }
+            return predikat + " dalam menguasai " + (materi || "materi pokok pelajaran");
+        }
+
+        function hitungRataRataAktif(n) {
+            let komponen = [n.ul1, n.blok1, n.ul2, n.blok2, n.uh, n.pre, n.post, n.tugas];
+            let total = 0; let jumlahIsian = 0;
+            komponen.forEach(v => { if (v > 0) { total += v; jumlahIsian++; } });
+            let rerata = jumlahIsian > 0 ? (total / jumlahIsian) : 0;
+            return Math.round(rerata * 10) / 10;
+        }
+
+        function renderAllInputs() {
+            const sem = db.semester;
+            let sHtml = "";
+            db.siswa.forEach((s, idx) => {
+                sHtml += `<tr>
+                    <td>${idx+1}</td>
+                    <td><input type="file" class="form-control form-control-sm" accept="image/*" onchange="processStudentPhoto(this, ${idx})"></td>
+                    <td><input type="text" class="form-control form-control-sm" value="${s.nis}" onchange="db.siswa[${idx}].nis=this.value; saveAllData()"></td>
+                    <td><input type="text" class="form-control form-control-sm" value="${s.nisn}" onchange="db.siswa[${idx}].nisn=this.value; saveAllData()"></td>
+                    <td><input type="text" class="form-control form-control-sm fw-bold" value="${s.nama}" onchange="db.siswa[${idx}].nama=this.value; saveAllData()"></td>
+                    <td><input type="text" class="form-control form-control-sm" value="${s.tempat}" onchange="db.siswa[${idx}].tempat=this.value; saveAllData()"></td>
+                    <td><input type="date" class="form-control form-control-sm" value="${s.tanggal}" onchange="db.siswa[${idx}].tanggal=this.value; saveAllData()"></td>
+                    <td><select class="form-select form-select-sm" onchange="db.siswa[${idx}].jk=this.value; saveAllData()"><option ${s.jk=='Laki-laki'?'selected':''}>Laki-laki</option><option ${s.jk=='Perempuan'?'selected':''}>Perempuan</option></select></td>
+                    <td><input type="text" class="form-control form-control-sm" value="${s.agama}" onchange="db.siswa[${idx}].agama=this.value; saveAllData()"></td>
+                    <td><input type="text" class="form-control form-control-sm" value="${s.status}" onchange="db.siswa[${idx}].status=this.value; saveAllData()"></td>
+                    <td><input type="number" class="form-control form-control-sm" value="${s.anak_ke}" onchange="db.siswa[${idx}].anak_ke=this.value; saveAllData()"></td>
+                    <td><input type="text" class="form-control form-control-sm" value="${s.alamat}" onchange="db.siswa[${idx}].alamat=this.value; saveAllData()"></td>
+                    <td><input type="text" class="form-control form-control-sm" value="${s.hp}" onchange="db.siswa[${idx}].hp=this.value; saveAllData()"></td>
+                    <td><input type="text" class="form-control form-control-sm" value="${s.smp}" onchange="db.siswa[${idx}].smp=this.value; saveAllData()"></td>
+                    <td><input type="text" class="form-control form-control-sm" value="${s.kelas_diterima || 'XI-A'}" onchange="db.siswa[${idx}].kelas_diterima=this.value; saveAllData()"></td>
+                    <td><input type="date" class="form-control form-control-sm" value="${s.tgl_diterima || '2025-07-15'}" onchange="db.siswa[${idx}].tgl_diterima=this.value; saveAllData()"></td>
+                    <td><input type="text" class="form-control form-control-sm" value="${s.bapak}" onchange="db.siswa[${idx}].bapak=this.value; saveAllData()"></td>
+                    <td><input type="text" class="form-control form-control-sm" value="${s.mama}" onchange="db.siswa[${idx}].mama=this.value; saveAllData()"></td>
+                    <td><input type="text" class="form-control form-control-sm" value="${s.alamat_ortu || ''}" onchange="db.siswa[${idx}].alamat_ortu=this.value; saveAllData()"></td>
+                    <td><input type="text" class="form-control form-control-sm" value="${s.hp_ortu || ''}" onchange="db.siswa[${idx}].hp_ortu=this.value; saveAllData()"></td>
+                    <td><input type="text" class="form-control form-control-sm" value="${s.kerja_bapak}" onchange="db.siswa[${idx}].kerja_bapak=this.value; saveAllData()"></td>
+                    <td><input type="text" class="form-control form-control-sm" value="${s.kerja_mama}" onchange="db.siswa[${idx}].kerja_mama=this.value; saveAllData()"></td>
+                    <td><input type="text" class="form-control form-control-sm" value="${s.nama_wali || '-'}" onchange="db.siswa[${idx}].nama_wali=this.value; saveAllData()"></td>
+                    <td><input type="text" class="form-control form-control-sm" value="${s.hp_wali || '-'}" onchange="db.siswa[${idx}].hp_wali=this.value; saveAllData()"></td>
+                </tr>`;
+            });
+            document.getElementById('siswaTableBody').innerHTML = sHtml;
+
+            let eHtml = "", kHtml = "", aHtml = "", cHtml = "", mHtml = "", optsHtml = "";
+            db.siswa.forEach((s, idx) => {
+                eHtml += `<tr><td>${idx+1}</td><td><strong>${s.nama}</strong></td><td><input type="text" class="form-control form-control-sm" value="${s['sem'+sem+'_ekskul'] || ''}" onchange="db.siswa[${idx}]['sem'+db.semester+'_ekskul']=this.value; saveAllData()"></td><td><input type="text" class="form-control form-control-sm" value="${s['sem'+sem+'_ekskul_desc'] || ''}" onchange="db.siswa[${idx}]['sem'+db.semester+'_ekskul_desc']=this.value; saveAllData()"></td></tr>`;
+                kHtml += `<tr><td>${idx+1}</td><td><strong>${s.nama}</strong></td><td><input type="text" class="form-control form-control-sm" value="${s['sem'+sem+'_koku'] || ''}" onchange="db.siswa[${idx}]['sem'+db.semester+'_koku']=this.value; saveAllData()"></td></tr>`;
+                aHtml += `<tr><td>${idx+1}</td><td class="text-start"><strong>${s.nama}</strong></td><td><input type="number" class="form-control form-control-sm text-center" value="${s['sem'+sem+'_sakit'] || 0}" onchange="db.siswa[${idx}]['sem'+db.semester+'_sakit']=parseInt(this.value)||0; saveAllData()"></td><td><input type="number" class="form-control form-control-sm text-center" value="${s['sem'+sem+'_izin'] || 0}" onchange="db.siswa[${idx}]['sem'+db.semester+'_izin']=parseInt(this.value)||0; saveAllData()"></td><td><input type="number" class="form-control form-control-sm text-center" value="${s['sem'+sem+'_alpa'] || 0}" onchange="db.siswa[${idx}]['sem'+db.semester+'_alpa']=parseInt(this.value)||0; saveAllData()"></td></tr>`;
+                cHtml += `<tr><td>${idx+1}</td><td><strong>${s.nama}</strong></td><td><input type="text" class="form-control form-control-sm" value="${s['sem'+sem+'_catatan'] || ''}" onchange="db.siswa[${idx}]['sem'+db.semester+'_catatan']=this.value; saveAllData()"></td></tr>`;
+            });
+
+            db.mapel.forEach((m, idx) => {
+                let mapelLabelHtml = m.nama;
+                if(m.options) {
+                    mapelLabelHtml = `<select class="form-select form-select-sm d-inline-block w-auto fw-bold text-primary" onchange="db.mapel[${idx}].nama=this.value; saveAllData(); renderAllInputs();">`;
+                    m.options.forEach(opt => { mapelLabelHtml += `<option value="${opt}" ${m.nama === opt ? 'selected' : ''}>${opt}</option>`; });
+                    mapelLabelHtml += `</select>`;
+                }
+                mHtml += `<tr>
+                    <td>${mapelLabelHtml}</td>
+                    <td><input type="number" class="form-control form-control-sm text-center fw-bold" value="${m.kkm}" onchange="db.mapel[${idx}].kkm=parseInt(this.value)||75; saveAllData(); renderLegerUmum();"></td>
+                    <td><input type="text" class="form-control form-control-sm" value="${m.materi || ''}" placeholder="Tulis Materi Pokok..." onchange="db.mapel[${idx}].materi=this.value; saveAllData();"></td>
+                </tr>`;
+                optsHtml += `<option value="${m.id}">${m.nama}</option>`;
+            });
+
+            document.getElementById('ekskulTableBody').innerHTML = eHtml;
+            document.getElementById('kokurikulerTableBody').innerHTML = kHtml;
+            document.getElementById('absensiTableBody').innerHTML = aHtml;
+            document.getElementById('catatanTableBody').innerHTML = cHtml;
+            document.getElementById('mapelTableBody').innerHTML = mHtml;
+            document.getElementById('legerMapelSelect').innerHTML = optsHtml;
+            document.getElementById('cpMapelSelect').innerHTML = optsHtml;
+
+            renderLegerUmum();
+            updateCetakStatic();
+        }
+
+        function renderLegerUmum() {
+            const mapelId = document.getElementById('legerMapelSelect').value || 'mapel1';
+            const sem = db.semester;
+            const targetMapel = db.mapel.find(m => m.id === mapelId);
+            const kkm = targetMapel ? targetMapel.kkm : 75;
+
+            let html = "";
+            db.siswa.forEach((s, idx) => {
+                const key = `${sem}_${idx}_${mapelId}`;
+                if(!db.nilai[key]) db.nilai[key] = { ujian:0, ul1:0, blok1:0, ul2:0, blok2:0, uh:0, pre:0, post:0, tugas:0 };
+                const n = db.nilai[key];
+                let rerata = hitungRataRataAktif(n);
+                let remidialVal = rerata < kkm ? kkm : rerata;
+
+                html += `<tr>
+                    <td>${idx+1}</td><td class="text-start fw-bold text-dark">${s.nama}</td>
+                    <td><input type="number" class="form-control form-control-sm text-center" value="${n.ujian}" onchange="updateNilaiField('${key}','ujian',this.value)"></td>
+                    <td><input type="number" class="form-control form-control-sm text-center" value="${n.ul1}" onchange="updateNilaiField('${key}','ul1',this.value)"></td>
+                    <td><input type="number" class="form-control form-control-sm text-center" value="${n.blok1}" onchange="updateNilaiField('${key}','blok1',this.value)"></td>
+                    <td><input type="number" class="form-control form-control-sm text-center" value="${n.ul2}" onchange="updateNilaiField('${key}','ul2',this.value)"></td>
+                    <td><input type="number" class="form-control form-control-sm text-center" value="${n.blok2}" onchange="updateNilaiField('${key}','blok2',this.value)"></td>
+                    <td><input type="number" class="form-control form-control-sm text-center" value="${n.uh}" onchange="updateNilaiField('${key}','uh',this.value)"></td>
+                    <td><input type="number" class="form-control form-control-sm text-center" value="${n.pre}" onchange="updateNilaiField('${key}','pre',this.value)"></td>
+                    <td><input type="number" class="form-control form-control-sm text-center" value="${n.post}" onchange="updateNilaiField('${key}','post',this.value)"></td>
+                    <td><input type="number" class="form-control form-control-sm text-center" value="${n.tugas}" onchange="updateNilaiField('${key}','tugas',this.value)"></td>
+                    <td class="bg-primary-subtle fw-bold text-dark">${rerata}</td><td class="bg-success-subtle fw-bold text-dark">${remidialVal}</td>
+                </tr>`;
+            });
+            document.getElementById('legerUmumBody').innerHTML = html;
+        }
+
+        function renderLegerCP() {
+            const mapelId = document.getElementById('cpMapelSelect').value || 'mapel1';
+            const sem = db.semester;
+            const targetMapel = db.mapel.find(m => m.id === mapelId);
+            const kkm = targetMapel ? targetMapel.kkm : 75;
+            const materi = targetMapel ? targetMapel.materi : "";
+
+            let html = "";
+            db.siswa.forEach((s, idx) => {
+                const key = `${sem}_${idx}_${mapelId}`;
+                const n = db.nilai[key] || { ujian:0, ul1:0, blok1:0, ul2:0, blok2:0, uh:0, pre:0, post:0, tugas:0 };
+                let rerata = hitungRataRataAktif(n);
+                let cpDeskripsi = hitungCPDeskripsi(rerata, kkm, materi);
+                html += `<tr><td>${idx+1}</td><td><strong>${s.nama}</strong></td><td class="text-center bg-light fw-bold">${rerata}</td><td class="text-muted italic">${cpDeskripsi}</td></tr>`;
+            });
+            document.getElementById('legerCPBody').innerHTML = html;
+        }
+
+        function updateNilaiField(key, field, val) {
+            db.nilai[key][field] = parseInt(val) || 0;
+            renderLegerUmum();
+            localStorage.setItem("rapor_webapp_db_v3", JSON.stringify(db));
+        }
+
+        function renderLegerRekap(tipe) {
+            const sem = db.semester;
+            let table = document.getElementById('tableLeger' + tipe.charAt(0).toUpperCase() + tipe.slice(1));
+            let html = `<thead class="table-dark"><tr><th>No</th><th>Nama Siswa</th>`;
+            db.mapel.forEach(m => { html += `<th>${m.nama}</th>`; });
+            html += `</tr></thead><tbody>`;
+
+            db.siswa.forEach((s, sIdx) => {
+                html += `<tr><td>${sIdx+1}</td><td class="text-start fw-bold text-dark">${s.nama}</td>`;
+                db.mapel.forEach(m => {
+                    const key = `${sem}_${sIdx}_${m.id}`;
+                    const n = db.nilai[key] || { ujian:0, ul1:0, blok1:0, ul2:0, blok2:0, uh:0, pre:0, post:0, tugas:0 };
+                    let val = 0;
+                    if(tipe === 'murni') val = n.ujian;
+                    else {
+                        let rerata = hitungRataRataAktif(n);
+                        if(tipe === 'kolektif') val = rerata;
+                        if(tipe === 'remidial') val = n.ujian < m.kkm || rerata < m.kkm ? m.kkm : rerata;
+                    }
+                    html += `<td>${val}</td>`;
+                });
+                html += `</tr>`;
+            });
+            table.innerHTML = html + `</tbody>`;
+        }
+
+        function updateCetakStatic() {
+            const iden = db.identitas || {};
+            document.getElementById('cis_nama').innerText = iden.nama || '';
+            document.getElementById('cis_npsn').innerText = iden.npsn || '';
+            document.getElementById('cis_nss').innerText = iden.nss || '';
+            document.getElementById('cis_alamat').innerText = iden.alamat || '';
+            document.getElementById('cis_desa').innerText = iden.desa || '';
+            document.getElementById('cis_kec').innerText = iden.kec || '';
+            document.getElementById('cis_kab').innerText = iden.kab || '';
+            document.getElementById('cis_prov').innerText = iden.prov || '';
+            document.getElementById('cov_school_name').innerText = iden.nama || 'SMA NEGERI CONTOH';
+
+            let logoBox = document.getElementById('coverLogoContainer');
+            let pdLogoBox = document.getElementById('pdHeaderLogoContainer');
+            
+            if(iden.logo) {
+                if(logoBox) logoBox.innerHTML = `<img src="${iden.logo}" style="max-height: 200px; max-width: 200px; object-fit: contain;">`;
+                if(pdLogoBox) pdLogoBox.innerHTML = `<img src="${iden.logo}" style="max-height: 60px; max-width: 60px; object-fit: contain;">`;
+            } else {
+                if(logoBox) logoBox.innerHTML = `<div class="border border-dark mx-auto d-flex align-items-center justify-content-center" style="width: 180px; height: 180px; font-style: italic; color: #7f8c8d; border-radius: 10px; font-size:14px;">[ Logo Sekolah ]</div>`;
+                if(pdLogoBox) pdLogoBox.innerHTML = `<div class="border border-dark d-flex align-items-center justify-content-center text-muted" style="width: 55px; height: 55px; font-size:9px; text-align:center;">Logo</div>`;
+            }
+
+            if(db.siswa.length > 0) {
+                document.getElementById('cov_nama').innerText = db.siswa[0].nama;
+                document.getElementById('cov_nisn').innerText = db.siswa[0].nisn;
+                document.getElementById('cov_nis').innerText = db.siswa[0].nis;
+            }
+        }
+
+        function prepareCetakSiswa() {
+            let opts = "";
+            db.siswa.forEach((s, idx) => { opts += `<option value="${idx}">${s.nama}</option>`; });
+            document.getElementById('selectCetakSiswa').innerHTML = opts;
+            renderCetakIdentitasSiswa();
+        }
+
+        function renderCetakIdentitasSiswa() {
+            const idx = document.getElementById('selectCetakSiswa').value || 0;
+            const s = db.siswa[idx];
+            if(!s) return;
+
+            const tanggalDiterimaFormatted = formatTanggalIndo(s.tgl_diterima || '2025-07-15');
+            document.getElementById('pd_cetak_tempat_tgl').innerText = `Atambua, ${tanggalDiterimaFormatted}`;
+            document.getElementById('pd_cetak_kepsek').innerText = db.identitas.kepsek || '';
+            document.getElementById('pd_cetak_kepsek_nip').innerText = 'NIP. ' + (db.identitas.kepsek_nip || '');
+
+            let photoBox = document.getElementById('pdPhotoContainer');
+            if(studentPhotos[idx]) {
+                photoBox.innerHTML = `<img src="${studentPhotos[idx]}" style="width: 3cm; height: 4cm; border: 1px solid #000; object-fit: cover; padding: 2px;">`;
+            } else {
+                photoBox.innerHTML = `<div style="width: 3cm; height: 4cm; border: 1px solid #000; display:flex; align-items:center; justify-content:center; text-align:center; font-size:11px; color:#aaa; font-weight:bold; background:#fafafa;">PAS FOTO<br>3 x 4</div>`;
+            }
+
+            document.getElementById('tableCetakPD').innerHTML = `
+                <tr><td width="3%">1.</td><td width="38%">Nama Lengkap Peserta Didik</td><td width="2%">:</td><td class="fw-bold text-uppercase">${s.nama}</td></tr>
+                <tr><td>2.</td><td>NIS / NISN</td><td>:</td><td>${s.nis} / ${s.nisn}</td></tr>
+                <tr><td>3.</td><td>Tempat, Tanggal Lahir</td><td>:</td><td>${s.tempat}, ${formatTanggalIndo(s.tanggal)}</td></tr>
+                <tr><td>4.</td><td>Jenis Kelamin</td><td>:</td><td>${s.jk}</td></tr>
+                <tr><td>5.</td><td>Agama</td><td>:</td><td>${s.agama}</td></tr>
+                <tr><td>6.</td><td>Status Dalam Keluarga</td><td>:</td><td>${s.status}</td></tr>
+                <tr><td>7.</td><td>Anak ke</td><td>:</td><td>${s.anak_ke}</td></tr>
+                <tr><td>8.</td><td>Alamat Peserta Didik</td><td>:</td><td>${s.alamat}</td></tr>
+                <tr><td>9.</td><td>Nomor HP Peserta Didik</td><td>:</td><td>${s.hp}</td></tr>
+                <tr><td>10.</td><td>Sekolah Asal (SMP/MTs)</td><td>:</td><td>${s.smp}</td></tr>
+                <tr><td>11.</td><td>Diterima di SMA ini</td><td>:</td><td></td></tr>
+                <tr><td></td><td>a. Di Kelas</td><td>:</td><td>${s.kelas_diterima || 'XI-A'}</td></tr>
+                <tr><td></td><td>b. Pada Tanggal</td><td>:</td><td>${tanggalDiterimaFormatted}</td></tr>
+                <tr><td>12.</td><td>Orangtua</td><td>:</td><td></td></tr>
+                <tr><td></td><td>a. Nama Bapak</td><td>:</td><td>${s.bapak}</td></tr>
+                <tr><td></td><td>b. Nama Mama</td><td>:</td><td>${s.mama}</td></tr>
+                <tr><td></td><td>c. Alamat</td><td>:</td><td>${s.alamat_ortu || s.alamat}</td></tr>
+                <tr><td></td><td>d. Nomor HP</td><td>:</td><td>${s.hp_ortu || '-'}</td></tr>
+                <tr><td>13.</td><td>Pekerjaan Orangtua</td><td>:</td><td></td></tr>
+                <tr><td></td><td>a. Bapak</td><td>:</td><td>${s.kerja_bapak}</td></tr>
+                <tr><td></td><td>b. Mama</td><td>:</td><td>${s.kerja_mama}</td></tr>
+                <tr><td>14.</td><td>Wali Peserta Didik</td><td>:</td><td></td></tr>
+                <tr><td></td><td>a. Nama Wali</td><td>:</td><td>${s.nama_wali || '-'}</td></tr>
+                <tr><td></td><td>b. Nomor HP</td><td>:</td><td>${s.hp_wali || '-'}</td></tr>
+            `;
+            updateCetakStatic();
+        }
+
+        function prepareRaporFinal() {
+            let opts = "";
+            db.siswa.forEach((s, idx) => { opts += `<option value="${idx}">${s.nama}</option>`; });
+            document.getElementById('selectRaporSiswa').innerHTML = opts;
+            renderRaporFinal();
+        }
+
+        function renderRaporFinal() {
+            const scope = document.getElementById('selectRaporScope').value;
+            const targetIdx = document.getElementById('selectRaporSiswa').value || 0;
+            const tipe = document.getElementById('selectRaporTipe').value;
+            const sem = db.semester;
+            const iden = db.identitas || {};
+
+            document.getElementById('wrapperSelectRaporSiswa').style.display = (scope === 'all') ? 'none' : 'block';
+
+            let indicesToPrint = [];
+            if(scope === 'all') { db.siswa.forEach((_, i) => indicesToPrint.push(i)); } 
+            else { indicesToPrint.push(parseInt(targetIdx)); }
+
+            let masterHtml = "";
+
+            indicesToPrint.forEach(sIdx => {
+                const s = db.siswa[sIdx];
+                if(!s) return;
+
+                let tableRowsHtml = "";
+                db.mapel.forEach((m, mIdx) => {
+                    const key = `${sem}_${sIdx}_${m.id}`;
+                    const n = db.nilai[key] || { ujian:0, ul1:0, blok1:0, ul2:0, blok2:0, uh:0, pre:0, post:0, tugas:0 };
+                    
+                    let akhir = 0;
+                    if(tipe === 'murni') akhir = n.ujian;
+                    else {
+                        let rerata = hitungRataRataAktif(n);
+                        if(tipe === 'kolektif') akhir = rerata;
+                        if(tipe === 'remidial') akhir = rerata < m.kkm ? m.kkm : rerata;
+                    }
+                    const cpText = hitungCPDeskripsi(akhir, m.kkm, m.materi);
+                    tableRowsHtml += `<tr><td class="text-center">${mIdx+1}</td><td class="text-start fw-semibold">${m.nama}</td><td class="fw-bold text-center">${akhir}</td><td class="text-start" style="font-size:11.5px; line-height:1.4;">${cpText}</td></tr>`;
+                });
+
+                const headerBlockHtml = `
+                    <div class="row text-start small mb-1" style="font-size:12.5px;">
+                        <div class="col-6">
+                            <table class="table table-sm table-borderless m-0 p-0">
+                                <tr><td width="35%" class="p-0">Nama Siswa</td><td class="p-0">: <strong>${s.nama}</strong></td></tr>
+                                <tr><td class="p-0">NIS / NISN</td><td class="p-0">: ${s.nis} / ${s.nisn}</td></tr>
+                                <tr><td class="p-0">Kelas / Fase</td><td class="p-0">: ${iden.kelas || 'XI-A'} / ${iden.fase || 'F'}</td></tr>
+                            </table>
+                        </div>
+                        <div class="col-6">
+                            <table class="table table-sm table-borderless m-0 p-0">
+                                <tr><td width="35%" class="p-0">Nama Sekolah</td><td class="p-0">: ${iden.nama || ''}</td></tr>
+                                <tr><td class="p-0">Tahun Pelajaran</td><td class="p-0">: ${iden.tp || ''}</td></tr>
+                                <tr><td class="p-0">Semester</td><td class="p-0">: ${sem === "1" ? "1 (Ganjil)" : "2 (Genap)"}</td></tr>
+                            </table>
+                        </div>
+                    </div>
+                    <hr class="border-dark my-1" style="border-top: 2px solid #000;">
+                `;
+
+                // Logika Dropdown Kenaikan Kelas (Khusus Semester 2)
+                let tambahanKenaikanKelasHtml = "";
+                let tanggapanIndex = "5";
+                
+                if (sem === "2") {
+                    tambahanKenaikanKelasHtml = `
+                    <div class="mt-2 text-start">
+                        <h6 class="fw-bold mb-1" style="font-size:13px;">5. Keterangan Kenaikan Kelas</h6>
+                        <div class="border border-dark p-2" style="font-size:12px; background:#fafafa;">
+                            <select class="form-select form-select-sm border-0 bg-transparent p-0 w-auto select-print-clean" style="box-shadow: none; cursor: pointer;">
+                                <option value="Naik Ke Kelas XI">Naik Ke Kelas XI</option>
+                                <option value="Naik Ke Kelas XII">Naik Ke Kelas XII</option>
+                                <option value="Tidak Naik Ke Kelas XI">Tidak Naik Ke Kelas XI</option>
+                                <option value="Tidak Naik Ke Kelas XII">Tidak Naik Ke Kelas XII</option>
+                            </select>
+                        </div>
+                    </div>`;
+                    tanggapanIndex = "6";
+                }
+
+                masterHtml += `
+                    <div class="rapor-page">
+                        <div>
+                            ${headerBlockHtml}
+                            <h5 class="fw-bold text-center my-2" style="font-size:14px; letter-spacing: 0.5px;">CAPAIAN HASIL BELAJAR</h5>
+                            <table class="table table-bordered border-dark align-middle" style="font-size: 12px; margin-top:5px;">
+                                <thead class="table-light border-dark">
+                                    <tr><th width="40">No</th><th>Mata Pelajaran</th><th width="70">Nilai Akhir</th><th>Capaian Kompetensi</th></tr>
+                                </thead>
+                                <tbody>${tableRowsHtml}</tbody>
+                            </table>
+                        </div>
+                        <div>
+                            <hr class="border-dark my-1">
+                            <div class="d-flex justify-content-between text-muted px-1" style="font-size:11px;">
+                                <div>${s.nama} | NISN: ${s.nisn}</div>
+                                <div class="fw-bold">Halaman 1</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="rapor-page">
+                        <div>
+                            ${headerBlockHtml}
+                            
+                            <div class="mt-2 text-start">
+                                <h6 class="fw-bold mb-1" style="font-size:13px;">1. Kegiatan Kokurikuler (Proyek P5)</h6>
+                                <table class="table table-bordered border-dark table-sm" style="font-size: 12px;">
+                                    <thead class="table-light border-dark"><tr><th>Deskripsi Capaian Proyek Penguatan Profil Pelajar Pancasila</th></tr></thead>
+                                    <tbody><tr><td style="line-height:1.4;">${s['sem'+sem+'_koku'] || '-'}</td></tr></tbody>
+                                </table>
+                            </div>
+
+                            <div class="mt-2 text-start">
+                                <h6 class="fw-bold mb-1" style="font-size:13px;">2. Kegiatan Ekstrakurikuler</h6>
+                                <table class="table table-bordered border-dark table-sm text-center" style="font-size: 12px;">
+                                    <thead class="table-light border-dark"><tr><th width="35%">Organisasi / Ekstrakurikuler</th><th>Keterangan / Deskripsi Kegiatan</th></tr></thead>
+                                    <tbody><tr><td class="fw-bold">${s['sem'+sem+'_ekskul'] || '-'}</td><td class="text-start" style="line-height:1.4;">${s['sem'+sem+'_ekskul_desc'] || '-'}</td></tr></tbody>
+                                </table>
+                            </div>
+
+                            <div class="row mt-2">
+                                <div class="col-5 text-start">
+                                    <h6 class="fw-bold mb-1" style="font-size:13px;">3. Ketidakhadiran</h6>
+                                    <table class="table table-bordered border-dark table-sm text-center" style="font-size: 12px;">
+                                        <tbody>
+                                            <tr><td class="text-start" width="60%">Sakit</td><td class="fw-bold">${s['sem'+sem+'_sakit'] || 0} hari</td></tr>
+                                            <tr><td class="text-start">Izin</td><td class="fw-bold">${s['sem'+sem+'_izin'] || 0} hari</td></tr>
+                                            <tr><td class="text-start">Alpa</td><td class="fw-bold">${s['sem'+sem+'_alpa'] || 0} hari</td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div class="col-7 text-start">
+                                    <h6 class="fw-bold mb-1" style="font-size:13px;">4. Catatan Wali Kelas</h6>
+                                    <div class="border border-dark p-2" style="font-size:12px; min-height: 65px; font-style: italic; background:#fafafa; line-height:1.4;">
+                                        ${s['sem'+sem+'_catatan'] || '-'}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            ${tambahanKenaikanKelasHtml}
+
+                            <div class="mt-2 text-start">
+                                <h6 class="fw-bold mb-1" style="font-size:13px;">${tanggapanIndex}. Tanggapan Orang Tua/Wali Murid</h6>
+                                <div class="border border-dark p-2 text-muted" style="min-height: 55px; font-size:11px;">
+                                    (Diisi manual oleh orang tua/wali setelah lembaran rapor dicetak)
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-4 mx-1" style="font-size: 12px; line-height:1.4;">
+                            <div class="row text-center mb-4">
+                                <div class="col-4 text-start">
+                                    <p class="mb-5">Orang Tua/Wali,</p>
+                                    <br><br>
+                                    <p class="border-bottom border-dark d-inline-block" style="width: 150px;"></p>
+                                </div>
+                                <div class="col-4"></div>
+                                <div class="col-4 text-end">
+                                    <p class="m-0">${iden.tgl_rapor || '.........., ............'}</p>
+                                    <p class="mb-5">Wali Kelas,</p>
+                                    <br><br>
+                                    <p class="fw-bold mb-0 text-decoration-underline">${iden.wali || ''}</p>
+                                    <p class="m-0">NIP. ${iden.wali_nip || ''}</p>
+                                </div>
+                            </div>
+                            <div class="row text-center">
+                                <div class="col-12">
+                                    <p class="mb-5">Mengetahui,<br>Kepala Sekolah,</p>
+                                    <br><br>
+                                    <p class="fw-bold mb-0 text-decoration-underline text-uppercase">${iden.kepsek || ''}</p>
+                                    <p class="m-0">NIP. ${iden.kepsek_nip || ''}</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <hr class="border-dark my-1">
+                            <div class="d-flex justify-content-between text-muted px-1" style="font-size:11px;">
+                                <div>${s.nama} | NISN: ${s.nisn}</div>
+                                <div class="fw-bold">Halaman 2</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            document.getElementById('raporPrintContainer').innerHTML = masterHtml;
+        }
+
+        let chart1, chart2;
+        function initCharts() {
+            const cp1 = document.getElementById('canvasParent1');
+            const cp2 = document.getElementById('canvasParent2');
+            if (typeof Chart === 'undefined' || !cp1 || !cp2) return;
+
+            cp1.innerHTML = '<canvas id="chartGender"></canvas>';
+            cp2.innerHTML = '<canvas id="chartMapel"></canvas>';
+            let l = 0, p = 0;
+            db.siswa.forEach(s => { if(s.jk === 'Laki-laki') l++; else p++; });
+
+            chart1 = new Chart(document.getElementById('chartGender'), {
+                type: 'pie',
+                data: { labels: ['Laki-laki', 'Perempuan'], datasets: [{ data: [l, p], backgroundColor: ['#0284c7', '#f43f5e'] }] },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+            chart2 = new Chart(document.getElementById('chartMapel'), {
+                type: 'bar',
+                data: { labels: ['Agama', 'Pancasila', 'B.Indo', 'B.Ingg', 'MTK', 'Informatika'], datasets: [{ label: 'Rata-rata Kelas', data: [78.4, 81.2, 79.5, 76.0, 78.8, 84.2], backgroundColor: '#10b981' }] },
+                options: { responsive: true, maintainAspectRatio: false, scales: { y: { min: 0, max: 100 } } }
+            });
+        }
+    </script>
+</body>
+</html>
