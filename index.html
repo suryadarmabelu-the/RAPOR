@@ -126,7 +126,8 @@
             
             <a class="nav-link nav-print mt-2" onclick="showPage(this, 'page-cover-rapor')"><i class="fa-solid fa-folder-open"></i>9. Cetak Cover Rapor</a>
             <a class="nav-link nav-print" onclick="showPage(this, 'page-cetak-identitas-sekolah')"><i class="fa-solid fa-print"></i>10. Cetak Identitas Sekolah</a>
-            <a class="nav-link nav-print" onclick="prepareCetakSiswa(); showPage(this, 'page-cetak-identitas-pd')"><i class="fa-solid fa-id-card"></i>8. Cetak Identitas PD</a>
+            <!-- Perbaikan di sini: Menggunakan navCetakPD -->
+            <a class="nav-link nav-print" onclick="navCetakPD(this)"><i class="fa-solid fa-id-card"></i>8. Cetak Identitas PD</a>
             <a class="nav-link bg-primary text-white font-weight-bold" onclick="prepareRaporFinal(); showPage(this, 'page-rapor-final')"><i class="fa-solid fa-file-pdf"></i>16-18. Cetak Rapor Final (A4)</a>
         </nav>
     </div>
@@ -306,29 +307,201 @@
             <div class="card p-3"><div class="table-responsive"><table class="table table-bordered table-sm text-center align-middle" id="tableLegerRemidial" style="min-width: 1000px;"></table></div></div>
         </div>
 
-        <div id="page-cover-rapor" class="page-section">
-            <div class="no-print mb-4 border p-3 rounded bg-white"><button class="btn btn-dark fw-bold w-100 w-md-auto" onclick="window.print()"><i class="fa-solid fa-print me-2"></i>Cetak Cover Rapor (A4)</button></div>
-            <div class="printable-page border border-dark p-4 shadow-sm" style="height: 297mm; display: flex; flex-direction: column; justify-content: space-between; align-items: center; padding-top: 20mm !important; padding-bottom: 20mm !important; box-shadow: none; border-width: 3px !important; outline: 1px solid #000; outline-offset: -8px;">
-                <div class="text-center w-100 mt-5">
-                    <h1 class="fw-bold" style="font-size: 38px; margin-top: 10px; letter-spacing: 2px;">RAPOR</h1>
-                    <h4 class="fw-bold" style="font-size: 20px; margin-bottom: 5px;">SEKOLAH MENENGAH ATAS (SMA)</h4>
-                    <br><br>
-                    <h5 class="fw-bold text-uppercase py-2 mx-auto" style="width: 80%; font-size: 22px;" id="cov_school_name">SMA Negeri Contoh</h5>
+        <div id="page-cover-rapor" class="page-section active">
+            <div class="no-print d-print-none mb-4 p-3 border rounded bg-white shadow-sm">
+                <div class="row g-3 align-items-center">
+                    <div class="col-md-3">
+                        <label class="fw-bold form-label mb-0">Pilih Mode Cetak:</label>
+                        <select id="printModeSelect" class="form-select mt-1" onchange="toggleCetakMode()">
+                            <option value="personal">Cetak Per Siswa</option>
+                            <option value="massal">Cetak Massal (Semua Siswa)</option>
+                        </select>
+                    </div>
+                    <div class="col-md-5" id="dropdownSiswaContainer">
+                        <label class="fw-bold form-label mb-0">Pilih Siswa:</label>
+                        <select id="selectSiswaCetak" class="form-select mt-1" onchange="updateCoverSiswaTerpilih()">
+                            <option value="" disabled selected>-- Pilih Siswa --</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4 text-md-end mt-4">
+                        <button class="btn btn-dark fw-bold w-100" onclick="prosesCetakCoverRapor()">
+                            <i class="fa-solid fa-print me-2"></i>Cetak Cover Rapor
+                        </button>
+                    </div>
                 </div>
-                <div class="my-4" id="coverLogoContainer" style="display:flex; justify-content:center; align-items:center;"></div>
-                <div class="w-100 mt-4" style="font-size: 16px; display:flex; justify-content:center;">
-                    <table class="table table-borderless style-table" style="width: 80%; margin: 0 auto; line-height: 2.5;">
-                        <tr><td width="35%">Nama Peserta Didik</td><td width="5%" class="text-center">:</td><td class="fw-bold border-bottom border-dark text-uppercase" id="cov_nama"></td></tr>
-                        <tr><td>NISN</td><td class="text-center">:</td><td class="fw-bold border-bottom border-dark" id="cov_nisn"></td></tr>
-                        <tr><td>NIS</td><td class="text-center">:</td><td class="fw-bold border-bottom border-dark" id="cov_nis"></td></tr>
-                    </table>
-                </div>
-                <div class="text-center mb-5">
-                    <h5 class="fw-bold" style="font-size:16px; margin-bottom:2px;">KEMENTERIAN PENDIDIKAN DAN KEBUDAYAAN</h5>
-                    <h6 class="fw-bold" style="font-size:14px;">REPUBLIK INDONESIA</h6>
+            </div>
+
+            <div id="cover-print-wrapper">
+                <div class="printable-page border border-dark p-4 shadow-sm mb-4" style="height: 297mm; display: flex; flex-direction: column; justify-content: space-between; align-items: center; padding-top: 20mm !important; padding-bottom: 20mm !important; box-shadow: none; border-width: 3px !important; outline: 1px solid #000; outline-offset: -8px;">
+                    <div class="text-center w-100 mt-5">
+                        <h1 class="fw-bold" style="font-size: 38px; margin-top: 10px; letter-spacing: 2px;">RAPOR</h1>
+                        <h4 class="fw-bold" style="font-size: 20px; margin-bottom: 5px;">SEKOLAH MENENGAH ATAS (SMA)</h4>
+                        <br>
+                        <h5 class="fw-bold text-uppercase py-2 mx-auto" style="width: 80%; font-size: 24px;" id="cov_school_name_dynamic">SMA Negeri Contoh</h5>
+                    </div>
+                    
+                    <div class="my-4" id="coverLogoContainerDynamic" style="display:flex; justify-content:center; align-items:center;"></div>
+                    
+                    <div class="w-100 mt-4" style="font-size: 16px; display:flex; justify-content:center;">
+                        <table class="table table-borderless style-table" style="width: 80%; margin: 0 auto; line-height: 1.5;">
+                            <tr><td width="35%">Nama Peserta Didik</td><td width="5%" class="text-center">:</td><td class="fw-bold border-bottom border-dark text-uppercase" id="cov_nama_dyn">-</td></tr>
+                            <tr><td>NISN</td><td class="text-center">:</td><td class="fw-bold border-bottom border-dark" id="cov_nisn_dyn">-</td></tr>
+                            <tr><td>NIS</td><td class="text-center">:</td><td class="fw-bold border-bottom border-dark" id="cov_nis_dyn">-</td></tr>
+                        </table>
+                    </div>
+                    
+                    <div class="text-center mb-5">
+                        <h4 class="fw-bold" style="font-size:18px; margin-bottom:2px;">KEMENTERIAN PENDIDIKAN DAN KEBUDAYAAN</h4>
+                        <h4 class="fw-bold" style="font-size:18px;">REPUBLIK INDONESIA</h4>
+                    </div>
                 </div>
             </div>
         </div>
+
+        <script>
+            // Fungsi untuk mengisi dropdown siswa dari database app
+            function populateSiswaDropdown() {
+                const selectDropdown = document.getElementById('selectSiswaCetak');
+                selectDropdown.innerHTML = '<option value="" disabled selected>-- Pilih Siswa --</option>';
+                
+                if (db && db.siswa) {
+                    db.siswa.forEach((s, idx) => {
+                        let opt = document.createElement('option');
+                        opt.value = idx;
+                        opt.setAttribute('data-nama', s.nama);
+                        opt.setAttribute('data-nisn', s.nisn);
+                        opt.setAttribute('data-nis', s.nis);
+                        opt.innerText = s.nama;
+                        selectDropdown.appendChild(opt);
+                    });
+                }
+                
+                // Update info identitas sekolah di cover
+                const iden = db.identitas || {};
+                const nameEl = document.getElementById('cov_school_name_dynamic');
+                if(nameEl) nameEl.innerText = iden.nama || 'SMA NEGERI CONTOH';
+                let logoBox = document.getElementById('coverLogoContainerDynamic');
+                if (iden.logo && logoBox) {
+                    logoBox.innerHTML = `<img src="${iden.logo}" style="max-height: 200px; max-width: 200px; object-fit: contain;">`;
+                } else if (logoBox) {
+                    logoBox.innerHTML = `<div class="border border-dark mx-auto d-flex align-items-center justify-content-center" style="width: 180px; height: 180px; font-style: italic; color: #7f8c8d; border-radius: 10px; font-size:14px;">[ Logo Sekolah ]</div>`;
+                }
+            }
+
+            // Toggle mode cetak personal / massal
+            function toggleCetakMode() {
+                const mode = document.getElementById('printModeSelect').value;
+                const dropdown = document.getElementById('dropdownSiswaContainer');
+                
+                if (mode === 'massal') {
+                    dropdown.style.display = 'none';
+                } else {
+                    dropdown.style.display = 'block';
+                }
+                resetCoverView();
+            }
+
+            // Reset tampilan cover
+            function resetCoverView() {
+                document.getElementById('cov_nama_dyn').innerText = '-';
+                document.getElementById('cov_nisn_dyn').innerText = '-';
+                document.getElementById('cov_nis_dyn').innerText = '-';
+                document.getElementById('selectSiswaCetak').value = "";
+                buildSingleCoverPage();
+            }
+
+            // Render ulang satu template cover bersih
+            function buildSingleCoverPage() {
+                const wrapper = document.getElementById('cover-print-wrapper');
+                const iden = db.identitas || {};
+                let logoSrc = iden.logo ? `<img src="${iden.logo}" style="max-height: 200px; max-width: 200px; object-fit: contain;">` : `<div class="border border-dark mx-auto d-flex align-items-center justify-content-center" style="width: 180px; height: 180px; font-style: italic; color: #7f8c8d; border-radius: 10px; font-size:14px;">[ Logo Sekolah ]</div>`;
+                
+                wrapper.innerHTML = `
+                <div class="printable-page border border-dark p-4 shadow-sm mb-4" style="height: 297mm; display: flex; flex-direction: column; justify-content: space-between; align-items: center; padding-top: 20mm !important; padding-bottom: 20mm !important; box-shadow: none; border-width: 3px !important; outline: 1px solid #000; outline-offset: -8px;">
+                    <div class="text-center w-100 mt-5">
+                        <h1 class="fw-bold" style="font-size: 38px; margin-top: 10px; letter-spacing: 2px;">RAPOR</h1>
+                        <h4 class="fw-bold" style="font-size: 20px; margin-bottom: 5px;">SEKOLAH MENENGAH ATAS (SMA)</h4>
+                        <br>
+                        <h5 class="fw-bold text-uppercase py-2 mx-auto" style="width: 80%; font-size: 24px;">${iden.nama || 'SMA NEGERI CONTOH'}</h5>
+                    </div>
+                    <div class="my-4" style="display:flex; justify-content:center; align-items:center;">${logoSrc}</div>
+                    <div class="w-100 mt-4" style="font-size: 16px; display:flex; justify-content:center;">
+                        <table class="table table-borderless style-table" style="width: 80%; margin: 0 auto; line-height: 1.5;">
+                            <tr><td width="35%">Nama Peserta Didik</td><td width="5%" class="text-center">:</td><td class="fw-bold border-bottom border-dark text-uppercase">-</td></tr>
+                            <tr><td>NISN</td><td class="text-center">:</td><td class="fw-bold border-bottom border-dark">-</td></tr>
+                            <tr><td>NIS</td><td class="text-center">:</td><td class="fw-bold border-bottom border-dark">-</td></tr>
+                        </table>
+                    </div>
+                    <div class="text-center mb-5">
+                        <h4 class="fw-bold" style="font-size:18px; margin-bottom:2px;">KEMENTERIAN PENDIDIKAN DAN KEBUDAYAAN</h4>
+                        <h4 class="fw-bold" style="font-size:18px;">REPUBLIK INDONESIA</h4>
+                    </div>
+                </div>`;
+            }
+
+            // Update cover saat siswa dipilih dari dropdown
+            function updateCoverSiswaTerpilih() {
+                const selectBox = document.getElementById('selectSiswaCetak');
+                const selectedOption = selectBox.options[selectBox.selectedIndex];
+                
+                if(selectedOption && selectedOption.value !== "") {
+                    document.getElementById('cov_nama_dyn').innerText = selectedOption.getAttribute('data-nama');
+                    document.getElementById('cov_nisn_dyn').innerText = selectedOption.getAttribute('data-nisn');
+                    document.getElementById('cov_nis_dyn').innerText = selectedOption.getAttribute('data-nis');
+                }
+            }
+
+            // Proses cetak cover
+            function prosesCetakCoverRapor() {
+                const mode = document.getElementById('printModeSelect').value;
+                const iden = db.identitas || {};
+                let logoSrc = iden.logo ? `<img src="${iden.logo}" style="max-height: 200px; max-width: 200px; object-fit: contain;">` : `<div class="border border-dark mx-auto d-flex align-items-center justify-content-center" style="width: 180px; height: 180px; font-style: italic; color: #7f8c8d; border-radius: 10px; font-size:14px;">[ Logo Sekolah ]</div>`;
+                
+                if (mode === 'personal') {
+                    const selectedIdx = document.getElementById('selectSiswaCetak').value;
+                    if (selectedIdx === "" || selectedIdx === null) {
+                        alert("Pilih siswa terlebih dahulu!");
+                        return;
+                    }
+                    window.print();
+                } else if (mode === 'massal') {
+                    const wrapper = document.getElementById('cover-print-wrapper');
+                    wrapper.innerHTML = '';
+                    
+                    db.siswa.forEach(siswa => {
+                        wrapper.innerHTML += `
+                        <div class="printable-page border border-dark p-4 shadow-sm mb-4" style="page-break-after: always; height: 297mm; display: flex; flex-direction: column; justify-content: space-between; align-items: center; padding-top: 20mm !important; padding-bottom: 20mm !important; box-shadow: none; border-width: 3px !important; outline: 1px solid #000; outline-offset: -8px;">
+                            <div class="text-center w-100 mt-5">
+                                <h1 class="fw-bold" style="font-size: 38px; margin-top: 10px; letter-spacing: 2px;">RAPOR</h1>
+                                <h4 class="fw-bold" style="font-size: 20px; margin-bottom: 5px;">SEKOLAH MENENGAH ATAS (SMA)</h4>
+                                <br>
+                                <h5 class="fw-bold text-uppercase py-2 mx-auto" style="width: 80%; font-size: 24px;">${iden.nama || 'SMA NEGERI CONTOH'}</h5>
+                            </div>
+                            <div class="my-4" style="display:flex; justify-content:center; align-items:center;">${logoSrc}</div>
+                            <div class="w-100 mt-4" style="font-size: 16px; display:flex; justify-content:center;">
+                                <table class="table table-borderless style-table" style="width: 80%; margin: 0 auto; line-height: 1.5;">
+                                    <tr><td width="35%">Nama Peserta Didik</td><td width="5%" class="text-center">:</td><td class="fw-bold border-bottom border-dark text-uppercase">${siswa.nama}</td></tr>
+                                    <tr><td>NISN</td><td class="text-center">:</td><td class="fw-bold border-bottom border-dark">${siswa.nisn}</td></tr>
+                                    <tr><td>NIS</td><td class="text-center">:</td><td class="fw-bold border-bottom border-dark">${siswa.nis}</td></tr>
+                                </table>
+                            </div>
+                            <div class="text-center mb-5">
+                                <h4 class="fw-bold" style="font-size:18px; margin-bottom:2px;">KEMENTERIAN PENDIDIKAN DAN KEBUDAYAAN</h4>
+                                <h4 class="fw-bold" style="font-size:18px;">REPUBLIK INDONESIA</h4>
+                            </div>
+                        </div>`;
+                    });
+                    
+                    setTimeout(() => {
+                        window.print();
+                    }, 350);
+                }
+            }
+
+            // Inisialisasi
+            toggleCetakMode();
+            populateSiswaDropdown();
+        </script>
 
         <div id="page-cetak-identitas-sekolah" class="page-section">
             <div class="no-print mb-4 border p-3 rounded bg-white"><button class="btn btn-dark fw-bold w-100 w-md-auto" onclick="window.print()"><i class="fa-solid fa-print me-2"></i>Cetak Identitas Sekolah</button></div>
@@ -361,14 +534,14 @@
                         <div id="pdHeaderLogoContainer" style="width: 70px; height: 70px; display: flex; align-items: center;"></div>
                         <h5 class="fw-bold text-center flex-grow-1 m-0" style="font-size:18px;">IDENTITAS PESERTA DIDIK</h5>
                     </div>
-                    <table class="table table-borderless align-middle m-0 p-0" id="tableCetakPD" style="line-height: 1.5; margin-left: 20px !important;"></table>
+                    <table class="table table-borderless align-middle m-0 p-0" id="tableCetakPD" style="line-height: 1.0; margin-left: 20px !important;"></table>
                 </div>
                 <div class="d-flex justify-content-end align-items-end px-4 mt-auto mb-4" style="gap: 50px;">
                     <div id="pdPhotoContainer" style="margin-bottom: 5px;"></div>
                     <div style="width: 250px; text-align: left;">
                         <p id="pd_cetak_tempat_tgl" class="m-0">Atambua, ........................</p>
                         <p class="mb-5">Kepala Sekolah,</p>
-                        <br><br>
+                        <br>
                         <p class="fw-bold mb-0 text-decoration-underline text-uppercase" id="pd_cetak_kepsek"></p>
                         <p id="pd_cetak_kepsek_nip" class="m-0"></p>
                     </div>
@@ -382,7 +555,7 @@
                     <div class="col-12 col-md-auto"><label class="fw-bold small">Mode Multi-Cetak:</label><select id="selectRaporScope" class="form-select form-select-sm" onchange="renderRaporFinal()"><option value="single">Siswa Terpilih Saja</option><option value="all">SEMUA SISWA (Masal)</option></select></div>
                     <div class="col-12 col-md-auto" id="wrapperSelectRaporSiswa"><label class="fw-bold small">Pilih Siswa:</label><select id="selectRaporSiswa" class="form-select form-select-sm" onchange="renderRaporFinal()"></select></div>
                     <div class="col-12 col-md-auto"><label class="fw-bold small">Gunakan Data Nilai:</label><select id="selectRaporTipe" class="form-select form-select-sm" onchange="renderRaporFinal()"><option value="murni">16. Nilai Ujian Murni</option><option value="kolektif">17. Nilai Rata-Rata Umum</option><option value="remidial" selected>18. Nilai Remidial Akhir</option></select></div>
-                    <div class="col-12 col-md-auto"><button class="btn btn-primary btn-sm fw-bold w-100" onclick="window.print()"><i class="fa-solid fa-print me-1"></i>Cetak Rapor A4</button></div>
+                    <div class="col-12 col-md-auto"><button class="btn btn-primary btn-sm fw-bold w-100" onclick="window.print()"><i class="fa-solid fa-print me-1"></i>Cetak Rapor</button></div>
                 </div>
             </div>
             <div class="printable-page" id="raporPrintContainer" style="border:none; box-shadow:none; padding:0; background:transparent;"></div>
@@ -413,6 +586,12 @@
         };
 
         let studentPhotos = {};
+
+        // Helper untuk navigasi Cetak Identitas PD
+        function navCetakPD(el) {
+            prepareCetakSiswa();
+            showPage(el, 'page-cetak-identitas-pd');
+        }
 
         // Mobile Sidebar Toggle
         function toggleSidebar() {
@@ -774,9 +953,9 @@
             document.getElementById('cis_kec').innerText = iden.kec || '';
             document.getElementById('cis_kab').innerText = iden.kab || '';
             document.getElementById('cis_prov').innerText = iden.prov || '';
-            document.getElementById('cov_school_name').innerText = iden.nama || 'SMA NEGERI CONTOH';
+            document.getElementById('cov_school_name_dynamic').innerText = iden.nama || 'SMA NEGERI CONTOH';
 
-            let logoBox = document.getElementById('coverLogoContainer');
+            let logoBox = document.getElementById('coverLogoContainerDynamic');
             let pdLogoBox = document.getElementById('pdHeaderLogoContainer');
             
             if(iden.logo) {
@@ -788,9 +967,9 @@
             }
 
             if(db.siswa.length > 0) {
-                document.getElementById('cov_nama').innerText = db.siswa[0].nama;
-                document.getElementById('cov_nisn').innerText = db.siswa[0].nisn;
-                document.getElementById('cov_nis').innerText = db.siswa[0].nis;
+                document.getElementById('cov_nama_dyn').innerText = db.siswa[0].nama;
+                document.getElementById('cov_nisn_dyn').innerText = db.siswa[0].nisn;
+                document.getElementById('cov_nis_dyn').innerText = db.siswa[0].nis;
             }
         }
 
@@ -909,7 +1088,6 @@
                 let ekskul2HTML = `<tr><td class="fw-bold">${s['sem'+sem+'_ekskul2'] || '-'}</td><td class="text-start" style="line-height:1.4;">${s['sem'+sem+'_ekskul_desc2'] || '-'}</td></tr>`;
                 let ekskul3HTML = `<tr><td class="fw-bold">${s['sem'+sem+'_ekskul3'] || '-'}</td><td class="text-start" style="line-height:1.4;">${s['sem'+sem+'_ekskul_desc3'] || '-'}</td></tr>`;
 
-                // Logika Dropdown Kenaikan Kelas (Khusus Semester 2)
                 let tambahanKenaikanKelasHtml = "";
                 let tanggapanIndex = "5";
                 
